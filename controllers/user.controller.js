@@ -1,4 +1,5 @@
 const {UserModel}=require("../models/user.model")
+const {BlacklistModel}=require("../models/blacklist.model")
 require("dotenv").config()
 const bcrypt = require('bcrypt');
 const jwt=require("jsonwebtoken")
@@ -55,7 +56,17 @@ const login=async (req,res)=>{
 }
 
 const logout=async(req,res)=>{
-    const data=req.body;
+
+    const token = req.headers.authorization.split(' ')[1];
+    try {
+        
+        const blacklistedToken = new BlacklistModel({ token });
+        await blacklistedToken.save();
+        return res.status(200).send('Logged out successfully');
+    } catch (error) {
+        console.error(err);
+        return res.status(500).send('Server error');
+    }
 }
 
 const userGet=async(req,res)=>{
@@ -69,9 +80,6 @@ const userUpdate=async(req,res)=>{
 const userDelete=async(req,res)=>{
 
 }
-
-const 
-
 
 
 

@@ -1,4 +1,5 @@
-const jwt =require("jsonwebtoken")
+const jwt =require("jsonwebtoken");
+const { BlacklistModel } = require("../models/blacklist.model");
 require("dotenv").config()
 
 const auth= async (req,res,next)=>{
@@ -14,20 +15,25 @@ const auth= async (req,res,next)=>{
     if(token){
 
         try {
-            var decoded = jwt.verify(token, process.env.AccessToken);
 
-            if(decoded){
+           const isBlacklisted= await BlacklistModel.findOne({token});
+           if(isBlacklisted){
+            return res.status(401).send(`Token is blacklisted`)
+           }
+
+            var decodedToken = jwt.verify(token, process.env.AccessToken);
+            if(decodedToken){
                 req.body.userID=decoded.userID;
                 next()
             }else{
-                return res.status(400).send({"msg":"Login Required"})
+                return res.status(401).json({ message: 'Unauthorized' });
             }
             
         } catch (error) {
-            return res.status(400).send("Token is Not Valid ")
+            return res.status(401).json({ message: 'Unauthorized' });
         }
     }else{
-        return res.status(400).send({"msg":"Login Required"})
+        return res.status(401).json({ message: 'Unauthorized' });
     }
 
 }
