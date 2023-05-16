@@ -14,12 +14,7 @@ const userSchema = new mongoose.Schema({
       type: String,
       required: true
     },
-    gender:{
-      type:String,
-      enum:["male","female"],
-      required:true
-    },
-    role : { type : String, enum : ["User", "Admin"], required : true, default : "User" }
+    role : { type : String, enum : ["User", "Moderator"], required : true, default : "User" }
   }, {
     versionKey : false,
     timestamps :true
