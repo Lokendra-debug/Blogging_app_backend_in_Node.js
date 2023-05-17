@@ -7,7 +7,7 @@ const jwt=require("jsonwebtoken")
 
 const register=async (req,res)=>{
 
-    let {name,email,password,gender}=req.body
+    let {name,email,password}=req.body
 
     try {
         let user=await UserModel.findOne({email})
@@ -15,7 +15,7 @@ const register=async (req,res)=>{
             return res.status(400).send({"msg":"already exist please login"})
         }
         const hash = bcrypt.hashSync(password, 6);
-        let newuser=new UserModel({name,email,password:hash,gender,role:"User"})
+        let newuser=new UserModel({name,email,password:hash,role:"User"})
         await newuser.save()
         return res.status(200).send({"msg":"User registered successfully"})
 
@@ -40,7 +40,11 @@ const login=async (req,res)=>{
             bcrypt.compare(password, user.password, (err, result)=> {
                 
                 if(result){
-                    res.status(200).send({"success":true,"token":jwt.sign({userID:user._id}, process.env.AccessToken, { expiresIn: '1h' })})
+
+                    const token=jwt.sign({authorID:user._id,authorRole:user.role},process.env.AccessToken,{expiresIn:"1h"})
+                    const refreshToken=jwt.sign({authorID:user._id,authorRole:user.role},process.env.RerefreshToken,{expiresIn:"7h"})
+
+                    res.status(200).send({"success":true,"token":token,"refreshToken":refreshToken})
                 }else{
                     return res.status(400).send({"error":"Invalid Password"})
                 }
@@ -81,6 +85,20 @@ const userDelete=async(req,res)=>{
 
 }
 
+const refreshToken=async(req,res)=>{
+    const refreshToken = req.headers.authorization.split(' ')[1];
+    try {
+      const decoded = jwt.verify(refreshToken,process.env.RerefreshToken);
+      const {authorID}=decoded;
+      const user = await UserModel.find({authorID});
+      if (!user) return res.status(401).send('Unauthorized');
+      const token=jwt.sign({authorID:decoded.authorID,authorRole:decoded.authorRole},process.env.AccessToken,{expiresIn:"1h"})
+      res.json({ token });
+    } catch (err) {
+      res.status(401).send('Unauthorized');
+    }
+}
 
 
-module.exports={register,login,logout,userGet,userUpdate,userDelete}
+
+module.exports={register,login,logout,userGet,userUpdate,userDelete,refreshToken}
