@@ -5,6 +5,7 @@ const bcrypt = require('bcrypt');
 const jwt=require("jsonwebtoken")
 
 
+
 const register=async (req,res)=>{
 
     let {name,email,password}=req.body
@@ -41,10 +42,14 @@ const login=async (req,res)=>{
                 
                 if(result){
 
-                    const token=jwt.sign({authorID:user._id,authorRole:user.role},process.env.AccessToken,{expiresIn:"1h"})
-                    const refreshToken=jwt.sign({authorID:user._id,authorRole:user.role},process.env.RerefreshToken,{expiresIn:"7h"})
+                    const accessToken=jwt.sign({authorID:user._id,authorRole:user.role},process.env.AccessToken,{expiresIn:60*30})
+                    const rerefreshToken=jwt.sign({authorID:user._id,authorRole:user.role},process.env.RerefreshToken,{expiresIn:60*60})
 
-                    res.status(200).send({"success":true,"token":token,"refreshToken":refreshToken})
+                    res.cookie(`accessToken`,accessToken)
+                    res.cookie(`rerefreshToken`,rerefreshToken)
+
+                    res.status(200).send({"success":true,msg:"login successfully"})
+
                 }else{
                     return res.status(400).send({"error":"Invalid Password"})
                 }
@@ -61,7 +66,7 @@ const login=async (req,res)=>{
 
 const logout=async(req,res)=>{
 
-    const token = req.headers.authorization.split(' ')[1];
+    const token=req.cookies.accessToken
     try {
         
         const blacklistedToken = new BlacklistModel({ token });
@@ -86,16 +91,18 @@ const userDelete=async(req,res)=>{
 }
 
 const refreshToken=async(req,res)=>{
-    const refreshToken = req.headers.authorization.split(' ')[1];
+    const refreshToken = req.cookies.rerefreshToken;
     try {
       const decoded = jwt.verify(refreshToken,process.env.RerefreshToken);
       const {authorID}=decoded;
       const user = await UserModel.find({authorID});
       if (!user) return res.status(401).send('Unauthorized');
-      const token=jwt.sign({authorID:decoded.authorID,authorRole:decoded.authorRole},process.env.AccessToken,{expiresIn:"1h"})
-      res.json({ token });
+      const token=jwt.sign({authorID:decoded.authorID,authorRole:decoded.authorRole},process.env.AccessToken,{expiresIn:60*30})
+      res.cookie("accessToken",token)
+      res.status(200).send({"msg":"ok"})
     } catch (err) {
-      res.status(401).send('Unauthorized');
+    
+      res.status(401).send(err.message);
     }
 }
 

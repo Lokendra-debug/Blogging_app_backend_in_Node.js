@@ -1,6 +1,8 @@
 const express=require("express")
 const cors=require("cors")
 require("dotenv").config()
+var cookieParser = require('cookie-parser')
+
 
 const {connection}=require("./config/db")
 const {userRoute}=require("./routes/user.route")
@@ -8,6 +10,7 @@ const {blogRoute}=require("./routes/blog.route")
 
 
 const app=express()
+app.use(cookieParser())
 app.use(express.json())
 app.use(cors())
 
