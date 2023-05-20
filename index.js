@@ -14,6 +14,12 @@ app.use(cookieParser())
 app.use(express.json())
 app.use(cors())
 
+app.get("/",async(req,res)=>{
+    res.status(200).send("base end point")
+})
+
+
+
 app.use("/users",userRoute)
 app.use("/blogs",blogRoute)
 
